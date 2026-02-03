@@ -1,0 +1,81 @@
+openapi: 3.0.0
+info:
+  title: TTS Gateway API
+  version: 1.0.0
+  description: OpenAI-compatible Text-to-Speech API with multi-provider support.
+servers:
+  - url: /api
+paths:
+  /v1/audio/speech:
+    post:
+      summary: Generates audio from the input text.
+      operationId: createSpeech
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSpeechRequest'
+      responses:
+        '200':
+          description: A playable audio file.
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: Invalid request parameters.
+        '401':
+          description: Unauthorized.
+        '500':
+          description: Internal server error or downstream provider failure.
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    CreateSpeechRequest:
+      type: object
+      required:
+        - model
+        - input
+        - voice
+      properties:
+        model:
+          type: string
+          description: |
+            The ID of the model to use. Format: `provider/model-name`.
+            Examples: `aliyun/cosyvoice-v1`, `aws/polly-neural`, `vibevoice/v1`.
+          example: aliyun/cosyvoice-v1
+        input:
+          type: string
+          description: The text to generate audio for.
+          maxLength: 4096
+        voice:
+          type: string
+          description: The voice ID to use.
+          example: xiaoyun
+        response_format:
+          type: string
+          enum: [mp3, opus, aac, flac, wav, pcm]
+          default: mp3
+        speed:
+          type: number
+          minimum: 0.25
+          maximum: 4.0
+          default: 1.0
+        extra_body:
+          type: object
+          description: Extended parameters for specific providers (emotion, tone).
+          properties:
+            emotion:
+              type: string
+              example: happy
+            tone:
+              type: string
+              example: excited

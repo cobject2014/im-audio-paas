@@ -1,50 +1,60 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!-- SYNC IMPACT REPORT
+Version: 1.0.0 (Initial)
+Modified Principles:
+- Defined I. Test-First Engineering
+- Defined II. Technology Stack Standards
+- Defined III. K8s & Container Readiness
+- Defined IV. API Specifications
+- Defined V. Security by Design
+- Defined VI. Code Quality & Style
+- Defined VII. Configuration Management
+Templates requiring updates:
+- .specify/templates/tasks-template.md (✅ updated: enforced test-first)
+-->
+# IM Audio PaaS Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Test-First Engineering
+Test-first development is mandatory for all major components. Testing must aim for at least **80% coverage** on core business logic.
+Local integration tests must use **Testcontainers** to ensure container-friendly verification and environmental consistency.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Technology Stack Standards
+**Backend**: Use **Java 21** as the primary language with **Spring Boot**. Utilize modern features like Virtual Threads, Record types, and Pattern Matching to simplify code and improve concurrency.
+**Frontend**: Use **TypeScript** as the primary language with the **React** framework.
+**Database**: **SQLite/H2** for local/test environments. Production persistence must use **Spring Data JPA** to ensure vendor independence. Avoid database-specific SQL/dialects unless explicitly approved.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. K8s & Container Readiness
+All backend architecture design must be **Kubernetes-friendly**.
+Requirements:
+- **Graceful Shutdown**
+- **Liveness/Readiness probes**
+- **Externalized log management** (Standard Out)
+- Local tests must be container-friendly.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. API Specifications
+All RESTful APIs must strictly follow the [`spec/restful_api_guideline_1.0.1.md`](spec/restful_api_guideline_1.0.1.md) specification.
+(Note: Ensure this specification file is present in the repository).
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Security by Design
+**No hardcoded secrets** allowed in the codebase.
+**Authentication**: Use OAuth2/JWT.
+**Transport**: All sensitive data in transit must use TLS 1.3.
+**Secrets**: Sensitive configuration must be managed via K8s Secrets or a Centralized Vault. (Tests may use partial exceptions).
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+### VI. Code Quality & Style
+**Conventions**: Follow **Google’s coding conventions**.
+**Comments**: Comments should be concise and placed only where strictly needed (no more, no less).
+**UI**: The user interface must be responsive and modern in style.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
-
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
-
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### VII. Configuration Management
+Use **centralized configuration** for production environments.
+Local configuration files are permitted for test cases.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This Constitution supersedes all other technical practices.
+Amendments require documentation, team approval, and a migration plan.
+All PRs and code reviews must verify compliance with these principles.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-02-03 | **Last Amended**: 2026-02-03

@@ -1,0 +1,85 @@
+package com.imaudiopaas.tts.service;
+
+import com.imaudiopaas.tts.core.TtsProvider;
+import com.imaudiopaas.tts.core.domain.ProviderType;
+import com.imaudiopaas.tts.core.domain.TtsRequest;
+import com.imaudiopaas.tts.core.domain.TtsResponse;
+import com.imaudiopaas.tts.exception.TtsException;
+import com.imaudiopaas.tts.model.ProviderConfig;
+import com.imaudiopaas.tts.model.VoiceDefinition;
+import com.imaudiopaas.tts.repository.ProviderConfigRepository;
+import com.imaudiopaas.tts.repository.VoiceDefinitionRepository;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+@Slf4j
+@Service
+public class ProviderRoutingService {
+
+    private final Map<ProviderType, TtsProvider> providers = new EnumMap<>(ProviderType.class);
+    private final ProviderConfigRepository providerConfigRepository;
+    private final VoiceDefinitionRepository voiceDefinitionRepository;
+
+    public ProviderRoutingService(
+            List<TtsProvider> providersList,
+            ProviderConfigRepository providerConfigRepository,
+            VoiceDefinitionRepository voiceDefinitionRepository) {
+        this.providerConfigRepository = providerConfigRepository;
+        this.voiceDefinitionRepository = voiceDefinitionRepository;
+        providersList.forEach(p -> providers.put(p.getType(), p));
+    }
+
+    public TtsResponse routeAndSynthesize(TtsRequest request) {
+        log.info("Routing TTS request for voice: {}", request.getVoiceId());
+        
+        // 1. Resolve Voice Definition
+        Optional<VoiceDefinition> voiceDef = voiceDefinitionRepository.findById(request.getVoiceId());
+        
+        ProviderType type;
+        String nativeVoiceId;
+
+        if (voiceDef.isPresent()) {
+            type = voiceDef.get().getProviderType();
+            nativeVoiceId = voiceDef.get().getNativeVoiceId();
+            log.debug("Resolved mapped voice {} to provider {} with native ID {}", 
+                    request.getVoiceId(), type, nativeVoiceId);
+        } else {
+            // Heuristic resolution if not mapped
+            type = inferProvider(request.getVoiceId());
+            nativeVoiceId = request.getVoiceId();
+            log.debug("Inferred provider {} for unmapped voice {}", type, request.getVoiceId());
+        }
+
+        // 2. Fetch Active Configuration
+        ProviderConfig config = providerConfigRepository.findFirstByProviderTypeAndIsActiveTrue(type)
+                .orElseThrow(() -> new TtsException("No active provider configuration found for type: " + type));
+
+        // 3. Select Implementation
+        TtsProvider provider = providers.get(type);
+        if (provider == null) {
+            throw new TtsException("No implementation found for provider type: " + type);
+        }
+
+        // 4. Update request with native ID and invoke
+        // Note: effectively modifying the request object here. 
+        // If deep copy needed, we should build a new one. But TtsRequest is @Data.
+        request.setVoiceId(nativeVoiceId);
+        
+        return provider.synthesize(request, config);
+    }
+    
+    private ProviderType inferProvider(String voiceId) {
+        if (voiceId == null) throw new IllegalArgumentException("Voice ID cannot be null");
+        String lower = voiceId.toLowerCase();
+        if (lower.startsWith("aliyun") || lower.contains("xiaoyun")) return ProviderType.ALIYUN;
+        if (lower.startsWith("aws") || lower.equals("joanna")) return ProviderType.AWS; // Joanna is AWS
+        if (lower.startsWith("tencent")) return ProviderType.TENCENT;
+        
+        // Fallback default: Aliyun (matches MVP priority) or Error
+        throw new IllegalArgumentException("Cannot infer provider for voice ID: " + voiceId);
+    }
+}

@@ -1,14 +1,13 @@
-FROM eclipse-temurin:17-jdk-jammy as builder
+FROM maven:3.9-eclipse-temurin-17 as builder
 WORKDIR /app
-COPY .mvn/ .mvn/
-COPY mvnw pom.xml ./
+COPY pom.xml .
 # Only download dependencies if pom.xml changed
 # Using verify --fail-never allows downloading dependencies even if compilation fails (which implies src not there yet)
 # But standard go-offline is better
-RUN ./mvnw dependency:go-offline
+RUN mvn dependency:go-offline
 
 COPY src ./src
-RUN ./mvnw package -DskipTests
+RUN mvn package -DskipTests
 
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app

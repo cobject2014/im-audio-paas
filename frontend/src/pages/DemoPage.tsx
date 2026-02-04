@@ -11,7 +11,8 @@ import {
     Alert
 } from '@mui/material';
 import { generateSpeech } from '../api/ttsClient';
-import AudioPlayer from '../components/AudioPlayer';
+import WaveformPlayer from '../components/WaveformPlayer'; // Updated import
+import LogWindow, { LogEntry } from '../components/LogWindow'; // Added import
 
 const DemoPage = () => {
     const [text, setText] = useState('Hello, this is a test of the TTS Gateway system.');
@@ -21,6 +22,12 @@ const DemoPage = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+    const [logs, setLogs] = useState<LogEntry[]>([]); // Log state
+
+    const addLog = (method: string, url: string, status?: number, duration?: number, error?: boolean, response?: any) => {
+        const timestamp = new Date().toLocaleTimeString();
+        setLogs(prev => [...prev, { timestamp, method, url, status, duration, error, response }]);
+    };
 
     const handleGenerate = async () => {
         setLoading(true);
@@ -34,9 +41,17 @@ const DemoPage = () => {
             }
         } catch (e) {
             setError('Invalid JSON in Extra Body');
-            setLoading(false);
             return;
         }
+
+        const startTime = Date.now();
+        const url = '/v1/audio/speech';
+        addLog('POST', url + ' (Started)', undefined, undefined, false, { 
+            input: text, 
+            voice: voiceId, 
+            model: model, 
+            extraParams: extraBody 
+        });
 
         try {
             const blob = await generateSpeech({
@@ -45,10 +60,15 @@ const DemoPage = () => {
                 model: model,
                 extra_body: extraBody
             });
+            const duration = Date.now() - startTime;
+            addLog('POST', url, 200, duration, false, `Success. Received Audio Blob (${blob.size} bytes, type: ${blob.type})`);
             setAudioBlob(blob);
         } catch (err: any) {
+            const duration = Date.now() - startTime;
             console.error('TTS Failed', err);
             let errMsg = err.message || 'Unknown Error';
+            let status = err.response?.status || 500;
+            let detail = null;
             
             // Handle Blob error response
             if (err.response && err.response.data instanceof Blob) {
@@ -56,16 +76,22 @@ const DemoPage = () => {
                      const text = await err.response.data.text();
                      const json = JSON.parse(text);
                      if (json.message) errMsg = json.message;
+                     detail = json;
                  } catch (parseError) {
                      // Not JSON, stick to statusText or message
                      if (err.response.statusText) errMsg = err.response.statusText;
+                     try {
+                        detail = await err.response.data.text(); 
+                     } catch (e) {}
                  }
             } else if (err.response?.data?.message) {
                 errMsg = err.response.data.message;
+                detail = err.response.data;
             } else if (err.response?.statusText) {
                 errMsg = err.response.statusText;
             }
 
+            addLog('POST', url, status, duration, true, detail || errMsg);
             setError('Generation failed: ' + errMsg);
         } finally {
             setLoading(false);
@@ -144,11 +170,13 @@ const DemoPage = () => {
 
                     {audioBlob && (
                         <Grid item xs={12}>
-                            <AudioPlayer audioBlob={audioBlob} />
+                            <WaveformPlayer audioBlob={audioBlob} />
                         </Grid>
                     )}
                 </Grid>
             </Paper>
+
+            <LogWindow logs={logs} />
         </Container>
     );
 };

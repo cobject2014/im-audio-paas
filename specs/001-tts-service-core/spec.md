@@ -104,6 +104,7 @@ End users (or developers testing the system) can use a web interface to type tex
 - **FR-007**: Admin Console MUST be protected via HTTP Basic Authentication.
 - **FR-008**: Admin Console MUST provide CRUD operations for Provider Configurations.
 - **FR-009**: Demo App MUST be accessible via web browser and connect to the Backend API.
+- **FR-010**: System MUST implement "Smart Default" resolution for voice IDs (e.g. mapping "aliyun" -> "xiaoyun") to enhance user experience.
 
 ### Key Entities
 

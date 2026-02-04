@@ -48,7 +48,25 @@ const DemoPage = () => {
             setAudioBlob(blob);
         } catch (err: any) {
             console.error('TTS Failed', err);
-            setError('Generation failed: ' + (err.response?.statusText || err.message));
+            let errMsg = err.message || 'Unknown Error';
+            
+            // Handle Blob error response
+            if (err.response && err.response.data instanceof Blob) {
+                 try {
+                     const text = await err.response.data.text();
+                     const json = JSON.parse(text);
+                     if (json.message) errMsg = json.message;
+                 } catch (parseError) {
+                     // Not JSON, stick to statusText or message
+                     if (err.response.statusText) errMsg = err.response.statusText;
+                 }
+            } else if (err.response?.data?.message) {
+                errMsg = err.response.data.message;
+            } else if (err.response?.statusText) {
+                errMsg = err.response.statusText;
+            }
+
+            setError('Generation failed: ' + errMsg);
         } finally {
             setLoading(false);
         }

@@ -38,6 +38,7 @@ All RESTful APIs must strictly follow the [`spec/restful_api_guideline_1.0.1.md`
 
 ### V. Security by Design
 **No hardcoded secrets** allowed in the codebase.
+**Encryption**: Sensitive data stored in databases (e.g. Provider Scripts) must be encrypted using **AES-256** (requiring 32-byte keys).
 **Authentication**: Use OAuth2/JWT.
 **Transport**: All sensitive data in transit must use TLS 1.3.
 **Secrets**: Sensitive configuration must be managed via K8s Secrets or a Centralized Vault. (Tests may use partial exceptions).

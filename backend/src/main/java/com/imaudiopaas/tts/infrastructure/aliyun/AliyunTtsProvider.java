@@ -163,6 +163,8 @@ public class AliyunTtsProvider implements TtsProvider {
         }
 
         byte[] audioData = outputStream.toByteArray();
+        log.info("Aliyun TTS generated {} bytes for voice {}", audioData.length, request.getVoiceId());
+        
         if (audioData.length == 0) {
             throw new TtsException("Aliyun TTS returned empty audio data");
         }

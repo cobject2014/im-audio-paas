@@ -3,11 +3,12 @@ import axios from 'axios';
 export interface ProviderConfig {
     id: string;
     name: string;
-    providerType: 'ALIYUN' | 'AWS' | 'TENCENT';
+    providerType: 'ALIYUN' | 'AWS' | 'TENCENT' | 'VIBEVOICE' | 'QWEN';
     baseUrl?: string;
     accessKey?: string;
     secretKey?: string;
     isActive?: boolean;
+    metadata?: string; // JSON string
 }
 
 const adminClient = axios.create({
@@ -17,6 +18,12 @@ const adminClient = axios.create({
 // Configure baseURL to point to backend. 
 // Ideally via env var. For dev MVP:
 adminClient.defaults.baseURL = 'http://localhost:8080/admin';
+
+// Initialize token from localStorage if available
+const storedToken = localStorage.getItem('adminAuth');
+if (storedToken) {
+    adminClient.defaults.headers.common['Authorization'] = `Basic ${storedToken}`;
+}
 
 export const setAuthToken = (token: string) => {
     // For Basic Auth, token is base64(user:pass)

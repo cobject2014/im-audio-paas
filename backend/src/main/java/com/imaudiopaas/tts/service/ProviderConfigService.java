@@ -57,6 +57,7 @@ public class ProviderConfigService {
         if (dto.getBaseUrl() != null) entity.setBaseUrl(dto.getBaseUrl());
         if (dto.getAccessKey() != null) entity.setAccessKey(dto.getAccessKey());
         if (dto.getSecretKey() != null) entity.setSecretKey(dto.getSecretKey());
+        if (dto.getMetadata() != null) entity.setMetadata(dto.getMetadata());
         if (dto.getIsActive() != null) entity.setIsActive(dto.getIsActive());
     }
 
@@ -68,6 +69,7 @@ public class ProviderConfigService {
                 .baseUrl(entity.getBaseUrl())
                 .isActive(entity.getIsActive())
                 .accessKey(mask(entity.getAccessKey()))
+                .metadata(entity.getMetadata())
                 .build();
     }
 

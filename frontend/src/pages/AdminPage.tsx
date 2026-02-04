@@ -18,6 +18,10 @@ const AdminPage = () => {
     const [currentProvider, setCurrentProvider] = useState<Partial<ProviderConfig>>({});
     const [error, setError] = useState('');
 
+    // Metadata fields
+    const [appKey, setAppKey] = useState('');
+    const [region, setRegion] = useState('');
+
     useEffect(() => {
         loadProviders();
     }, []);
@@ -35,15 +39,32 @@ const AdminPage = () => {
     const handleOpen = (provider?: ProviderConfig) => {
         if (provider) {
             setCurrentProvider(provider);
+            // Parse metadata
+            if (provider.metadata) {
+                try {
+                    const meta = JSON.parse(provider.metadata);
+                    setAppKey(meta.appKey || '');
+                    setRegion(meta.region || '');
+                } catch (e) {
+                    console.error("Failed to parse metadata", e);
+                    setAppKey('');
+                    setRegion('');
+                }
+            } else {
+                setAppKey('');
+                setRegion('');
+            }
         } else {
             setCurrentProvider({ 
                 name: '', 
                 providerType: 'ALIYUN', 
-                isActive: true, // Default active?
+                isActive: true, 
                 baseUrl: '',
                 accessKey: '', 
                 secretKey: '' 
             });
+            setAppKey('');
+            setRegion('');
         }
         setOpen(true);
     };
@@ -51,14 +72,26 @@ const AdminPage = () => {
     const handleClose = () => {
         setOpen(false);
         setCurrentProvider({});
+        setAppKey('');
+        setRegion('');
     };
 
     const handleSave = async () => {
         try {
+            // Pack metadata
+            const metadata: any = {};
+            if (appKey) metadata.appKey = appKey;
+            if (region) metadata.region = region;
+            
+            const providerToSave = {
+                ...currentProvider,
+                metadata: JSON.stringify(metadata)
+            };
+
             if (currentProvider.id) {
-                await updateProvider(currentProvider.id, currentProvider);
+                await updateProvider(currentProvider.id, providerToSave);
             } else {
-                await createProvider(currentProvider as Omit<ProviderConfig, 'id'>);
+                await createProvider(providerToSave as Omit<ProviderConfig, 'id'>);
             }
             handleClose();
             loadProviders();
@@ -79,6 +112,20 @@ const AdminPage = () => {
             }
         }
     };
+
+    const getLabels = (type?: string) => {
+        switch(type) {
+            case 'ALIYUN': return { ak: 'Access Key ID', sk: 'Access Key Secret' };
+            case 'TENCENT': return { ak: 'Secret ID', sk: 'Secret Key' };
+            case 'VIBEVOICE': 
+            case 'QWEN': return { ak: 'API Token', sk: 'Unused' };
+            default: return { ak: 'Access Key', sk: 'Secret Key' };
+        }
+    }
+
+    const labels = getLabels(currentProvider.providerType);
+    const isCloud = ["ALIYUN", "AWS", "TENCENT"].includes(currentProvider.providerType || 'ALIYUN');
+    const isLocal = ["VIBEVOICE", "QWEN"].includes(currentProvider.providerType || '');
 
     return (
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -109,7 +156,7 @@ const AdminPage = () => {
                                 <TableCell>{provider.name}</TableCell>
                                 <TableCell>{provider.providerType}</TableCell>
                                 <TableCell>{provider.baseUrl || '-'}</TableCell>
-                                <TableCell>{provider.accessKey}</TableCell>
+                                <TableCell>{provider.accessKey ? '******' : '-'}</TableCell>
                                 <TableCell>{provider.isActive ? 'Active' : 'Inactive'}</TableCell>
                                 <TableCell align="right">
                                     <IconButton onClick={() => handleOpen(provider)} color="primary">
@@ -145,33 +192,65 @@ const AdminPage = () => {
                             <Select
                                 value={currentProvider.providerType || 'ALIYUN'}
                                 label="Type"
-                                onChange={(e) => setCurrentProvider({ ...currentProvider, providerType: e.target.value as any })}
+                                onChange={(e) => {
+                                    setCurrentProvider({ ...currentProvider, providerType: e.target.value as any })
+                                }}
                             >
                                 <MenuItem value="ALIYUN">Aliyun</MenuItem>
                                 <MenuItem value="AWS">AWS</MenuItem>
                                 <MenuItem value="TENCENT">Tencent</MenuItem>
+                                <MenuItem value="VIBEVOICE">VibeVoice</MenuItem>
+                                <MenuItem value="QWEN">Qwen</MenuItem>
                             </Select>
                         </FormControl>
+                        
+                        <TextField
+                            label={labels.ak}
+                            fullWidth
+                            value={currentProvider.accessKey || ''}
+                            onChange={(e) => setCurrentProvider({ ...currentProvider, accessKey: e.target.value })}
+                        />
+                        
+                        {isCloud && (
+                            <TextField
+                                label={labels.sk}
+                                fullWidth
+                                type="password"
+                                value={currentProvider.secretKey || ''}
+                                onChange={(e) => setCurrentProvider({ ...currentProvider, secretKey: e.target.value })}
+                                helperText={currentProvider.id ? "Leave blank to keep unchanged" : "Required for new providers"}
+                            />
+                        )}
+
+                        {currentProvider.providerType === 'ALIYUN' && (
+                             <TextField
+                                label="App Key"
+                                fullWidth
+                                value={appKey}
+                                onChange={(e) => setAppKey(e.target.value)}
+                                helperText="Required for Aliyun NLS"
+                            />
+                        )}
+
+                        {(currentProvider.providerType === 'AWS' || currentProvider.providerType === 'TENCENT') && (
+                            <TextField
+                                label="Region"
+                                fullWidth
+                                value={region}
+                                onChange={(e) => setRegion(e.target.value)}
+                                placeholder={currentProvider.providerType === 'TENCENT' ? 'e.g. ap-shanghai' : 'e.g. us-east-1'}
+                                helperText="Service Region"
+                            />
+                        )}
+
                         <TextField
                             label="Base URL (Optional)"
                             fullWidth
                             value={currentProvider.baseUrl || ''}
                             onChange={(e) => setCurrentProvider({ ...currentProvider, baseUrl: e.target.value })}
+                            helperText={isLocal ? "Required for self-hosted providers" : "Optional for cloud providers"}
                         />
-                        <TextField
-                            label="Access Key"
-                            fullWidth
-                            value={currentProvider.accessKey || ''}
-                            onChange={(e) => setCurrentProvider({ ...currentProvider, accessKey: e.target.value })}
-                        />
-                        <TextField
-                            label="Secret Key"
-                            fullWidth
-                            type="password"
-                            value={currentProvider.secretKey || ''}
-                            onChange={(e) => setCurrentProvider({ ...currentProvider, secretKey: e.target.value })}
-                            helperText={currentProvider.id ? "Leave blank to keep unchanged" : "Required for new providers"}
-                        />
+                       
                     </Box>
                 </DialogContent>
                 <DialogActions>

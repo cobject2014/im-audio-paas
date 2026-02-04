@@ -15,6 +15,7 @@ Developers can generate audio from text using a single standardized API endpoint
 **API guideline** All API must follow the guideline in "restful_api_guideline_1.0.1.md".
 **API token** All API must have a "Bearer Token" field for auth purpose. But for local test, the token verification cab be ignored.
 **Independent Test**: Can be tested by calling the API with `provider=aliyun` (or aws/tencent) and receiving a valid audio file.
+**Leverage existing SDK** If cloud service provide Java SDK, use Java SDK directly before you try to use any RESTful API.
 
 **Acceptance Scenarios**:
 

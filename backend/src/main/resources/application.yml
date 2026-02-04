@@ -33,7 +33,7 @@ management:
 
 app:
   security:
-    encryption-key: "changeMeInProd1234567890123456" # 32 chars for AES-256
+    encryption-key: "changeMeInProd123456789012345678" # 32 chars for AES-256
 
 logging:
   level:

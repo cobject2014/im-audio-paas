@@ -51,6 +51,10 @@ All RESTful APIs must strictly follow the [`spec/restful_api_guideline_1.0.1.md`
 Use **centralized configuration** for production environments.
 Local configuration files are permitted for test cases.
 
+## VIII. Technical Constraints & Integrations
+- **SDK Policy:** ALWAYS prefer official Java SDKs over raw HTTP/REST calls for 3rd-party integrations (AWS, Aliyun, Tencent).
+- **Forbidden:** Do not use `RestTemplate`, `WebClient`, or `HttpClient` to manually construct requests unless the official SDK is missing or broken.
+
 ## Governance
 
 This Constitution supersedes all other technical practices.

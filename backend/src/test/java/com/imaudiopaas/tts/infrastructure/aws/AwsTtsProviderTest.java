@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.imaudiopaas.tts.core.domain.TtsRequest;
 import com.imaudiopaas.tts.model.ProviderConfig;
+import com.fasterxml.jackson.databind.ObjectMapper; // Added import
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -14,8 +15,9 @@ class AwsTtsProviderTest {
 
     @BeforeEach
     void setUp() {
-        provider = new AwsTtsProvider();
+        provider = new AwsTtsProvider(new ObjectMapper());
     }
+
 
     @Test
     void whenSynthesizeCalled_thenShouldCallPolly() {

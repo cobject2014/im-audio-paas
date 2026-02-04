@@ -28,6 +28,9 @@ public class ProviderConfigDto {
     // Secret key should be write-only in API responses (masked), but readable in request?
     // For now, simple DTO.
     private String secretKey;
+
+    // JSON string for additional config (region, appKey, etc.)
+    private String metadata;
     
     private Boolean isActive;
 }

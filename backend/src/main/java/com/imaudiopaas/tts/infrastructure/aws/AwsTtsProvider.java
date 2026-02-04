@@ -1,13 +1,15 @@
 package com.imaudiopaas.tts.infrastructure.aws;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.imaudiopaas.tts.core.TtsProvider;
 import com.imaudiopaas.tts.core.domain.AudioFormat;
-import com.imaudiopaas.tts.core.domain.ProviderType;
 import com.imaudiopaas.tts.core.domain.TtsRequest;
 import com.imaudiopaas.tts.core.domain.TtsResponse;
 import com.imaudiopaas.tts.exception.TtsException;
 import com.imaudiopaas.tts.model.ProviderConfig;
 import com.imaudiopaas.tts.core.ParameterMapper;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -18,42 +20,63 @@ import software.amazon.awssdk.services.polly.PollyClient;
 import software.amazon.awssdk.services.polly.model.OutputFormat;
 import software.amazon.awssdk.services.polly.model.SynthesizeSpeechRequest;
 import software.amazon.awssdk.services.polly.model.SynthesizeSpeechResponse;
-import software.amazon.awssdk.services.polly.model.VoiceId;
 import software.amazon.awssdk.services.polly.model.TextType;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.imaudiopaas.tts.core.domain.ProviderType; // Added import
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class AwsTtsProvider implements TtsProvider {
+
+    private final ObjectMapper objectMapper;
+    private final Map<String, PollyClient> clientCache = new ConcurrentHashMap<>();
+
+    @Override
+    public ProviderType getType() {
+        return ProviderType.AWS;
+    }
 
     @Override
     public TtsResponse synthesize(TtsRequest request, ProviderConfig config) {
         try {
-            AwsBasicCredentials credentials = AwsBasicCredentials.create(config.getAccessKey(), config.getSecretKey());
+            String regionName = parseRegion(config.getMetadata());
+            Region region = regionName != null ? Region.of(regionName) : Region.US_EAST_1;
             
-            // Note: In real prod, clients should be cached/pooled rather than created per request
-            PollyClient polly = PollyClient.builder()
-                    .credentialsProvider(StaticCredentialsProvider.create(credentials))
-                    .region(Region.US_EAST_1) // Should be parsed from metadata
-                    .build();
+            String cacheKey = config.getAccessKey() + ":" + region.id();
+            
+            PollyClient polly = clientCache.computeIfAbsent(cacheKey, k -> {
+                AwsBasicCredentials credentials = AwsBasicCredentials.create(config.getAccessKey(), config.getSecretKey());
+                return PollyClient.builder()
+                        .credentialsProvider(StaticCredentialsProvider.create(credentials))
+                        .region(region)
+                        .build();
+            });
 
             String processedText = ParameterMapper.toAwsSsml(request.getText(), request.getExtraBody());
             TextType textType = processedText.contains("<speak>") ? TextType.SSML : TextType.TEXT;
 
-            SynthesizeSpeechRequest speechRequest = SynthesizeSpeechRequest.builder()
+            SynthesizeSpeechRequest.Builder requestBuilder = SynthesizeSpeechRequest.builder()
                     .text(processedText)
                     .textType(textType)
-                    .voiceId(request.getVoiceId()) // Assumes ID matches AWS VoiceId string
-                    .outputFormat(mapFormat(request.getFormat()))
-                    .build();
+                    .outputFormat(mapFormat(request.getFormat()));
 
-            ResponseInputStream<SynthesizeSpeechResponse> response = polly.synthesizeSpeech(speechRequest);
+             if (request.getVoiceId() != null && !request.getVoiceId().isEmpty()) {
+                 requestBuilder.voiceId(request.getVoiceId());
+             }
+
+            // Map extra params like Engine (standard/neural) or LanguageCode if needed
+            // For now keeping it simple based on existing implementation
+
+            ResponseInputStream<SynthesizeSpeechResponse> response = polly.synthesizeSpeech(requestBuilder.build());
 
             return TtsResponse.builder()
                     .audioStream(response)
                     .format(request.getFormat())
-                    // Content length might be unknown in stream, but response.response() has metadata?
-                    // response.response() returns SynthesizeSpeechResponse which doesn't always have length for stream?
-                    // Actually usually it's streamed. we might not know content-length.
+                    // AWS Polly returns a stream, content length might not be available upfront easily
                     .contentLength(0) 
                     .build();
 
@@ -63,15 +86,24 @@ public class AwsTtsProvider implements TtsProvider {
         }
     }
 
+    private String parseRegion(String metadataJson) {
+        if (metadataJson == null) return null;
+        try {
+            JsonNode root = objectMapper.readTree(metadataJson);
+            if (root.has("region")) {
+                return root.get("region").asText();
+            }
+        } catch (Exception e) {
+            log.warn("Failed to parse metadata for AWS Region", e);
+        }
+        return null;
+    }
+
     private OutputFormat mapFormat(AudioFormat format) {
+        if (format == null) return OutputFormat.MP3;
         switch (format) {
             case PCM: return OutputFormat.PCM;
             default: return OutputFormat.MP3;
         }
-    }
-
-    @Override
-    public ProviderType getType() {
-        return ProviderType.AWS;
     }
 }

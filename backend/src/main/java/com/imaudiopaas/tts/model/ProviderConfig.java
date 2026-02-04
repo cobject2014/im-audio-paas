@@ -48,11 +48,11 @@ public class ProviderConfig {
     @Column(name = "secret_key")
     private String secretKey;
 
+    @Column(name = "metadata", columnDefinition = "TEXT")
+    private String metadata;
+
     @Column(name = "is_active")
     private Boolean isActive = true;
-
-    @Column(columnDefinition = "TEXT")
-    private String metadata;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

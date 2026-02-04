@@ -51,6 +51,12 @@ public class ProviderRoutingService {
             // Heuristic resolution if not mapped
             type = inferProvider(request.getVoiceId());
             nativeVoiceId = request.getVoiceId();
+            
+            // Smart default for Aliyun (if user just types "aliyun")
+            if (type == ProviderType.ALIYUN && "aliyun".equalsIgnoreCase(nativeVoiceId)) {
+                nativeVoiceId = "xiaoyun"; 
+            }
+            
             log.debug("Inferred provider {} for unmapped voice {}", type, request.getVoiceId());
         }
 

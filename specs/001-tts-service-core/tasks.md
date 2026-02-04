@@ -72,7 +72,9 @@ description: "Task map for TTS Gateway Service Core"
 - [x] T018 [P] [US1] Implement `TencentTtsProvider` in `backend/src/main/java/com/imaudiopaas/tts/infrastructure/tencent/TencentTtsProvider.java`
 - [x] T019 [US1] Implement `ProviderRoutingService` to select provider based on request model in `backend/src/main/java/com/imaudiopaas/tts/service/ProviderRoutingService.java`
 - [x] T020 [US1] Implement REST Controller `POST /v1/audio/speech` in `backend/src/main/java/com/imaudiopaas/tts/api/OpenAiSpeechController.java`
+- [x] T020.1 [US1] Implement Debug API to list valid provider names (e.g. `GET /v1/debug/providers`) in `backend/src/main/java/com/imaudiopaas/tts/api/DebugController.java`
 - [x] T021 [US1] Implement Bearer Token extraction filter in `backend/src/main/java/com/imaudiopaas/tts/config/security/ApiTokenFilter.java`
+- [x] T021.1 [US1] Implement "Smart Default" resolution logic in `ProviderRoutingService.java` (Added per FR-010)
 
 **Checkpoint**: Core TTS API working for cloud providers.
 
@@ -152,6 +154,8 @@ description: "Task map for TTS Gateway Service Core"
 - [x] T037 [This task has strictly frontend path] [US5] Create TTS Demo API client in `frontend/src/api/ttsClient.ts`
 - [x] T038 [This task has strictly frontend path] [US5] Create Audio Player component in `frontend/src/components/AudioPlayer.tsx`
 - [x] T039 [This task has strictly frontend path] [US5] Implement Demo Page with Provider/Voice selectors in `frontend/src/pages/DemoPage.tsx`
+- [x] T044 [This task has strictly frontend path] [US5] Implement dynamic wave graph visualization in `frontend/src/components/WaveformPlayer.tsx` (replaces basic player)
+- [x] T045 [This task has strictly frontend path] [US5] Implement HTTP log window component in `frontend/src/components/LogWindow.tsx` and integrate into `DemoPage.tsx`
 
 **Checkpoint**: Full end-to-end system demoable.
 

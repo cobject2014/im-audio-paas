@@ -23,6 +23,10 @@ Developers can generate audio from text using a single standardized API endpoint
 2. **Given** valid AWS credentials, **When** API is called with text "Hello" and provider "aws", **Then** audio is returned.
 3. **Given** invalid credentials, **When** API is called, **Then** a 401/500 compliant error response is returned.
 
+### Functional Requirements
+
+- **FR-001**: Besides the core API, this service should provide a debug API which and list all valid provicer names.
+
 ---
 
 ### User Story 2 - Admin Management Console (Priority: P1)
@@ -105,7 +109,9 @@ End users (or developers testing the system) can use a web interface to type tex
 - **FR-008**: Admin Console MUST provide CRUD operations for Provider Configurations.
 - **FR-009**: Demo App MUST be accessible via web browser and connect to the Backend API.
 - **FR-010**: System MUST implement "Smart Default" resolution for voice IDs (e.g. mapping "aliyun" -> "xiaoyun") to enhance user experience.
-
+- **FR-011**: Show a dynamic wave graph when playing the sound;
+- **FR-012**: Show a log window which is in the bottom part of demo app, show interaction HTTP progress between Demo App and API gateway.
+- 
 ### Key Entities
 
 - **ProviderConfig**: Represents a single TTS provider's settings (Type, Name, BaseURL, EncryptedCredentials, ActiveStatus).

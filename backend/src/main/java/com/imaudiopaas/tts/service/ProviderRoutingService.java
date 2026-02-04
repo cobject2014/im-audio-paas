@@ -49,7 +49,19 @@ public class ProviderRoutingService {
                     request.getVoiceId(), type, nativeVoiceId);
         } else {
             // Heuristic resolution if not mapped
-            type = inferProvider(request.getVoiceId());
+            // 1. Check if explicit model/provider is passed (Debug/Direct mode)
+            if (request.getModel() != null && !request.getModel().isEmpty()) {
+                try {
+                    type = ProviderType.valueOf(request.getModel().toUpperCase());
+                    log.debug("Using explicit provider from model param: {}", type);
+                } catch (IllegalArgumentException e) {
+                    // Not a valid provider enum, fall back to inference
+                    type = inferProvider(request.getVoiceId());
+                }
+            } else {
+                type = inferProvider(request.getVoiceId());
+            }
+
             nativeVoiceId = request.getVoiceId();
             
             // Smart default for Aliyun (if user just types "aliyun")
@@ -61,8 +73,9 @@ public class ProviderRoutingService {
         }
 
         // 2. Fetch Active Configuration
-        ProviderConfig config = providerConfigRepository.findFirstByProviderTypeAndIsActiveTrue(type)
-                .orElseThrow(() -> new TtsException("No active provider configuration found for type: " + type));
+        final ProviderType finalType = type;
+        ProviderConfig config = providerConfigRepository.findFirstByProviderTypeAndIsActiveTrue(finalType)
+                .orElseThrow(() -> new TtsException("No active provider configuration found for type: " + finalType));
 
         // 3. Select Implementation
         TtsProvider provider = providers.get(type);

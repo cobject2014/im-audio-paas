@@ -138,9 +138,9 @@ public class AliyunTtsProvider implements TtsProvider {
             synthesizer.setFormat(mapToOutputFormat(request.getFormat()));
             synthesizer.setSampleRate(SampleRateEnum.SAMPLE_RATE_16K); // Default to 16k
             
-            if (request.getVoiceId() != null && !request.getVoiceId().isEmpty()) {
-                synthesizer.setVoice(request.getVoiceId());
-            }
+            // if (request.getVoiceId() != null && !request.getVoiceId().isEmpty()) {
+            //    synthesizer.setVoice(request.getVoiceId());
+            // }
 
             Map<String, Object> extra = request.getExtraBody();
             if (extra != null) {
@@ -148,6 +148,16 @@ public class AliyunTtsProvider implements TtsProvider {
                 if (extra.containsKey("speech_rate")) synthesizer.setSpeechRate(toInt(extra.get("speech_rate")));
                 if (extra.containsKey("pitch_rate")) synthesizer.setPitchRate(toInt(extra.get("pitch_rate")));
             }
+
+            // --- DEBUG LOGGING START ---
+            log.info("Sending request to Aliyun TTS. AppKey: [{}], Voice: [{}], Text: [{}...], Format: [{}], SampleRate: [{}]",
+                    appKey,
+                    request.getVoiceId(), // This is the voice ID effectively sent
+                    request.getText() != null && request.getText().length() > 20 ? request.getText().substring(0, 20) : request.getText(),
+                    mapToOutputFormat(request.getFormat()),
+                    SampleRateEnum.SAMPLE_RATE_16K
+            );
+            // --- DEBUG LOGGING END ---
 
             synthesizer.start();
             synthesizer.waitForComplete();

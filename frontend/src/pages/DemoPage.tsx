@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
     Box, 
     Button, 
@@ -8,21 +8,45 @@ import {
     Paper, 
     Grid,
     CircularProgress,
-    Alert
+    Alert,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem
 } from '@mui/material';
-import { generateSpeech } from '../api/ttsClient';
-import WaveformPlayer from '../components/WaveformPlayer'; // Updated import
-import LogWindow, { LogEntry } from '../components/LogWindow'; // Added import
+import { generateSpeech, getDebugProviders } from '../api/ttsClient';
+import WaveformPlayer from '../components/WaveformPlayer'; 
+import LogWindow, { LogEntry } from '../components/LogWindow'; 
 
 const DemoPage = () => {
     const [text, setText] = useState('Hello, this is a test of the TTS Gateway system.');
     const [voiceId, setVoiceId] = useState('aliyun');
-    const [model, setModel] = useState('default');
+    
+    // New state for Provider Selection
+    const [provider, setProvider] = useState(''); 
+    const [providers, setProviders] = useState<string[]>([]);
+    const [providersError, setProvidersError] = useState(false);
+
     const [extraBodyStr, setExtraBodyStr] = useState('{\n  "emotion": "happy"\n}');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-    const [logs, setLogs] = useState<LogEntry[]>([]); // Log state
+    const [logs, setLogs] = useState<LogEntry[]>([]); 
+
+    // Fetch providers on mount
+    useEffect(() => {
+        getDebugProviders()
+            .then(data => {
+                setProviders(data);
+                if (data.length > 0) {
+                    setProvider(data[0]);
+                }
+            })
+            .catch(err => {
+                console.error("Failed to fetch providers", err);
+                setProvidersError(true);
+            });
+    }, []);
 
     const addLog = (method: string, url: string, status?: number, duration?: number, error?: boolean, response?: any) => {
         const timestamp = new Date().toLocaleTimeString();
@@ -49,7 +73,7 @@ const DemoPage = () => {
         addLog('POST', url + ' (Started)', undefined, undefined, false, { 
             input: text, 
             voice: voiceId, 
-            model: model, 
+            model: provider, // Using selected provider as model
             extraParams: extraBody 
         });
 
@@ -57,7 +81,7 @@ const DemoPage = () => {
             const blob = await generateSpeech({
                 input: text,
                 voice: voiceId,
-                model: model,
+                model: provider, // Pass selected provider as model
                 extra_body: extraBody
             });
             const duration = Date.now() - startTime;
@@ -118,22 +142,29 @@ const DemoPage = () => {
                     </Grid>
                     
                     <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth disabled={providersError || providers.length === 0}>
+                            <InputLabel id="provider-select-label">Provider (Debug)</InputLabel>
+                            <Select
+                                labelId="provider-select-label"
+                                value={provider}
+                                label="Provider (Debug)"
+                                onChange={(e) => setProvider(e.target.value)}
+                            >
+                                {providers.map((p) => (
+                                    <MenuItem key={p} value={p}>{p}</MenuItem>
+                                ))}
+                            </Select>
+                            {providersError && <Typography variant="caption" color="error">Failed to load providers. check backend.</Typography>}
+                        </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
                         <TextField
                             label="Voice ID"
                             fullWidth
                             value={voiceId}
                             helperText="e.g., aliyun, xiaoyun, Joanna, qwen-voice-1"
                             onChange={(e) => setVoiceId(e.target.value)}
-                        />
-                    </Grid>
-
-                    <Grid item xs={12} sm={6}>
-                        <TextField
-                            label="Model ID"
-                            fullWidth
-                            value={model}
-                            helperText="provider/model-name (optional)"
-                            onChange={(e) => setModel(e.target.value)}
                         />
                     </Grid>
 

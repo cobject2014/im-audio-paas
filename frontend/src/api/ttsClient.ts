@@ -10,7 +10,7 @@ export interface SpeechRequest {
 }
 
 const ttsClient = axios.create({
-    baseURL: 'http://localhost:8080/v1/audio',
+    baseURL: 'http://localhost:8080/v1/audio', // This is not ideal if we want to reach /v1/debug
     responseType: 'blob', // Important for audio
 });
 
@@ -22,6 +22,11 @@ ttsClient.interceptors.request.use((config) => {
     }
     return config;
 });
+
+export const getDebugProviders = async (): Promise<string[]> => {
+    const response = await axios.get('http://localhost:8080/v1/debug/providers');
+    return response.data;
+};
 
 export const generateSpeech = async (request: SpeechRequest): Promise<Blob> => {
     // Default model if not provided, though backend might require it or not.

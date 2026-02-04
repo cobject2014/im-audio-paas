@@ -156,6 +156,7 @@ description: "Task map for TTS Gateway Service Core"
 - [x] T039 [This task has strictly frontend path] [US5] Implement Demo Page with Provider/Voice selectors in `frontend/src/pages/DemoPage.tsx`
 - [x] T044 [This task has strictly frontend path] [US5] Implement dynamic wave graph visualization in `frontend/src/components/WaveformPlayer.tsx` (replaces basic player)
 - [x] T045 [This task has strictly frontend path] [US5] Implement HTTP log window component in `frontend/src/components/LogWindow.tsx` and integrate into `DemoPage.tsx`
+- [x] T046 [This task has strictly frontend path] [US5] Implement Provider Selection Dropdown: Fetch providers from `/v1/debug/providers` and update `DemoPage.tsx` logic to send selected provider (FR-013)
 
 **Checkpoint**: Full end-to-end system demoable.
 

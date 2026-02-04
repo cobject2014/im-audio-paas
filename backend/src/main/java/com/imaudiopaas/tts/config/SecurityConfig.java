@@ -29,6 +29,8 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/v1/debug/**").permitAll()
+                .requestMatchers("/v1/audio/speech").permitAll()
                 .requestMatchers("/v1/**").authenticated()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/error").permitAll()

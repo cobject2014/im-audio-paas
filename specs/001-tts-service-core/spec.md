@@ -111,6 +111,7 @@ End users (or developers testing the system) can use a web interface to type tex
 - **FR-010**: System MUST implement "Smart Default" resolution for voice IDs (e.g. mapping "aliyun" -> "xiaoyun") to enhance user experience.
 - **FR-011**: Show a dynamic wave graph when playing the sound;
 - **FR-012**: Show a log window which is in the bottom part of demo app, show interaction HTTP progress between Demo App and API gateway.
+- **FR-013**: There is a drop box which allow my to select avaiable providers. The provider names are fetched by Gateway service "Provider" debug API. If failed to fetch provider list, then disble UI element and show error message. When provider is selected, the demo should notify Gateway to use this provider to do TTS.
 - 
 ### Key Entities
 

@@ -25,7 +25,7 @@ Developers can generate audio from text using a single standardized API endpoint
 
 ### Functional Requirements
 
-- **FR-001**: Besides the core API, this service should provide a debug API which and list all valid provicer names.
+- **FR-014**: Besides the core API, this service should provide a debug API which lists all valid provider names.
 
 ---
 
@@ -111,12 +111,26 @@ End users (or developers testing the system) can use a web interface to type tex
 - **FR-010**: System MUST implement "Smart Default" resolution for voice IDs (e.g. mapping "aliyun" -> "xiaoyun") to enhance user experience.
 - **FR-011**: Show a dynamic wave graph when playing the sound;
 - **FR-012**: Show a log window which is in the bottom part of demo app, show interaction HTTP progress between Demo App and API gateway.
-- **FR-013**: There is a drop box which allow my to select avaiable providers. The provider names are fetched by Gateway service "Provider" debug API. If failed to fetch provider list, then disble UI element and show error message. When provider is selected, the demo should notify Gateway to use this provider to do TTS.
+- **FR-013**: There is a drop box which allow me to select available providers. The provider names are fetched by Gateway service "Provider" debug API, showing only configured and active providers. If failed to fetch provider list, then disable UI element and show error message. When provider is selected, the demo should notify Gateway to use this provider to do TTS.
 - 
 ### Key Entities
 
 - **ProviderConfig**: Represents a single TTS provider's settings (Type, Name, BaseURL, EncryptedCredentials, ActiveStatus).
 - **VoiceDefinition**: Represents a specific voice/character available for a provider (ID, Name, Gender, SupportedStyles).
+
+### Provider Configuration Requirements
+
+Different providers require different fields in the `ProviderConfig` entity. The system MUST enforce these requirements.
+
+| Provider | Access Key | Secret Key | Base URL | Metadata JSON Fields | Notes |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **ALIYUN** | Required (AccessKeyId) | Required (AccessKeySecret) | Ignored (Uses Cloud API) | `appKey` (Required) | `appKey` is the Project AppKey from NLS console. |
+| **TENCENT** | Required (SecretId) | Required (SecretKey) | Ignored (Uses Cloud API) | `appId` (Required), `region` (Optional) | `region` defaults to `ap-shanghai`. `appId` is mandatory for specific API calls. |
+| **AWS** | Required (AccessKey) | Required (SecretKey) | Ignored (Uses Cloud API) | `region` (Required) | e.g. `us-east-1`. |
+| **VIBEVOICE** | Optional (Bearer Token) | Ignored | Required (API Endpoint) | N/A | Self-hosted via HTTP. |
+| **QWEN** | Optional (Bearer Token) | Ignored | Required (API Endpoint) | N/A | Self-hosted via HTTP. |
+
+> **Critical**: For Tencent Cloud, `AppId` is a required field in metadata. Current implementation may need update to support this validation.
 
 ## Success Criteria
 

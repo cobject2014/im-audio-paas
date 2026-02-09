@@ -21,6 +21,7 @@ const AdminPage = () => {
     // Metadata fields
     const [appKey, setAppKey] = useState('');
     const [region, setRegion] = useState('');
+    const [appId, setAppId] = useState('');
 
     useEffect(() => {
         loadProviders();
@@ -45,14 +46,17 @@ const AdminPage = () => {
                     const meta = JSON.parse(provider.metadata);
                     setAppKey(meta.appKey || '');
                     setRegion(meta.region || '');
+                    setAppId(meta.appId || '');
                 } catch (e) {
                     console.error("Failed to parse metadata", e);
                     setAppKey('');
                     setRegion('');
+                    setAppId('');
                 }
             } else {
                 setAppKey('');
                 setRegion('');
+                setAppId('');
             }
         } else {
             setCurrentProvider({ 
@@ -65,6 +69,7 @@ const AdminPage = () => {
             });
             setAppKey('');
             setRegion('');
+            setAppId('');
         }
         setOpen(true);
     };
@@ -74,6 +79,7 @@ const AdminPage = () => {
         setCurrentProvider({});
         setAppKey('');
         setRegion('');
+        setAppId('');
     };
 
     const handleSave = async () => {
@@ -82,6 +88,7 @@ const AdminPage = () => {
             const metadata: any = {};
             if (appKey) metadata.appKey = appKey;
             if (region) metadata.region = region;
+            if (appId) metadata.appId = appId;
             
             const providerToSave = {
                 ...currentProvider,
@@ -178,7 +185,7 @@ const AdminPage = () => {
             </TableContainer>
 
             <Dialog open={open} onClose={handleClose}>
-                <DialogTitle>{currentProvider.id ? 'Edit Provider' : 'Add Provider'}</DialogTitle>
+                <DialogTitle>{currentProvider.id ? 'Edit Provider' : 'Add Provider (v1.1)'}</DialogTitle>
                 <DialogContent>
                     <Box component="form" sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2, minWidth: 400 }}>
                         <TextField
@@ -229,6 +236,16 @@ const AdminPage = () => {
                                 value={appKey}
                                 onChange={(e) => setAppKey(e.target.value)}
                                 helperText="Required for Aliyun NLS"
+                            />
+                        )}
+
+                        {currentProvider.providerType === 'TENCENT' && (
+                             <TextField
+                                label="App ID"
+                                fullWidth
+                                value={appId}
+                                onChange={(e) => setAppId(e.target.value)}
+                                helperText="Required for Tencent Cloud"
                             />
                         )}
 

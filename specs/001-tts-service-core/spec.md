@@ -1,0 +1,165 @@
+# Feature Specification: TTS Gateway Service Core
+
+**Feature Branch**: `001-tts-service-core`
+**Created**: 2026-02-03
+**Status**: Draft
+**Input**: User description: "Implement TTS Gateway service with Cloud (Aliyun, Tencent, AWS) and Self-hosted (VibeVoice, Qwen3) providers, Admin Console, and Demo App"
+
+## User Scenarios & Testing *(mandatory)*
+
+### User Story 1 - Unified Cloud TTS API (Priority: P1)
+
+Developers can generate audio from text using a single standardized API endpoint that delegates to cloud providers (Aliyun, Tencent, AWS), avoiding vendor lock-in and simplifying integration.
+
+**Why this priority**: Core functionality. Without the ability to route requests to cloud providers, the service has no baseline value.
+**API guideline** All API must follow the guideline in "restful_api_guideline_1.0.1.md".
+**API token** All API must have a "Bearer Token" field for auth purpose. But for local test, the token verification cab be ignored.
+**Independent Test**: Can be tested by calling the API with `provider=aliyun` (or aws/tencent) and receiving a valid audio file.
+**Leverage existing SDK** If cloud service provide Java SDK, use Java SDK directly before you try to use any RESTful API.
+
+**Acceptance Scenarios**:
+
+1. **Given** valid Aliyun credentials configured, **When** API is called with text "Hello World" and provider "aliyun", **Then** a playable audio stream is returned.
+2. **Given** valid AWS credentials, **When** API is called with text "Hello" and provider "aws", **Then** audio is returned.
+3. **Given** invalid credentials, **When** API is called, **Then** a 401/500 compliant error response is returned.
+
+### Functional Requirements
+
+- **FR-014**: Besides the core API, this service should provide a debug API which lists all valid provider names.
+
+---
+
+### User Story 2 - Admin Management Console (Priority: P1)
+
+Administrators can manage TTS provider configurations (API keys, secrets, regions) via a secure web interface, allowing credential rotation and provider updates without application restarts.
+
+**Why this priority**: Critical for operations. Storing long-term credentials in code is forbidden by Constitution; dynamic configuration is required for a managed service.
+
+**Independent Test**: Can be tested by logging into the console, adding a new provider config, and verifying the backend API immediately uses the new credential.
+
+**Acceptance Scenarios**:
+
+1. **Given** an unauthenticated user, **When** accessing the console, **Then** they are redirected to a login prompt (Basic Auth).
+2. **Given** an admin user, **When** they update the Tencent Secret ID, **Then** subsequent API calls use the new Secret ID immediately.
+3. **Given** a new provider configuration, **When** saved, **Then** it persists to the database (JPA).
+
+---
+
+### User Story 3 - Self-Hosted Model Integration (Priority: P2)
+
+Developers can generate speech using self-hosted models (VibeVoice, Qwen3-TTS) through the same API, enabling privacy interactions and use of specialized open-source models.
+
+**Why this priority**: Expands capabilities beyond standard cloud providers, offering cost savings and customization.
+
+**Independent Test**: Can be tested by mocking the downstream self-hosted service endpoints and verifying the gateway correctly transforms requests.
+
+**Acceptance Scenarios**:
+
+1. **Given** a configured VibeVoice endpoint, **When** API is called with provider "vibevoice", **Then** the request is correctly proxied to the VibeVoice instance.
+2. **Given** a Qwen3-TTS setup, **When** API is called with prompt text, **Then** audio is generated and returned.
+
+---
+
+### User Story 4 - Advanced Speech Controls (Priority: P2)
+
+Developers can specify emotion, tone, and character parameters in the API request to generate expressive speech.
+
+**Why this priority**: Differentiates the service from simple text-to-speech pipes; required for "rich" audio applications.
+
+**Independent Test**: Verify API accepts JSON payload with `emotion` field and maps it to the specific provider's format.
+
+**Acceptance Scenarios**:
+
+1. **Given** Aliyun CosyVoice provider, **When** requesting with `emotion="happy"`, **Then** the downstream request includes Aliyun-specific emotion parameters.
+2. **Given** a provider that doesn't support emotion, **When** requesting emotion, **Then** the parameter is gracefully ignored or a warning is returned (depending on design).
+
+---
+
+### User Story 5 - Interactive Demo App (Priority: P3)
+
+End users (or developers testing the system) can use a web interface to type text, select a provider/voice, and immediately play the result.
+
+**Why this priority**: Visual validation tool. Helps showcase capabilities but relies on the backend being functional first.
+
+**Independent Test**: User can open web page, type "Test", click "Generate", and hear sound.
+
+**Acceptance Scenarios**:
+
+1. **Given** the demo app loaded, **When** user selects "AWS" and types text, **Then** the "Play" button becomes active upon success.
+2. **Given** a backend error, **When** generating speech, **Then** the UI displays a readable error message.
+3. **Given** the user changes the "Provider" selection, **Then** the "Voice ID" field is automatically updated to a valid default for that provider, and the "Voice ID" suggestion list is updated to show voices relevant to the selected provider.
+
+### Edge Cases
+
+- **Provider Timeout**: What happens when a cloud provider takes >30 seconds? (System should timeout and return 504).
+- **Rate Limiting**: How does system handle downstream 429 errors? (Should propagate or retry with backoff).
+- **Unsupported Parameters**: Requesting an emotion from a provider that doesn't support it (Should ignore or warn).
+- **Network Failure**: Backend cannot reach provider (Return 502 Bad Gateway).
+
+## Requirements *(mandatory)*
+
+### Functional Requirements
+
+- **FR-001**: System MUST expose a RESTful API compliant with OpenAI's `/v1/audio/speech` definition (POST), extended for multi-provider support.
+- **FR-002**: System MUST support the following providers: Aliyun (Standard), Aliyun-CosyVoice (Large Model), Tencent Cloud, AWS Polly.
+- **FR-003**: System MUST support integration with self-hosted VibeVoice and Qwen3-TTS instances (via HTTP connector).
+- **FR-004**: API MUST accept parameters for `model` (provider/voice), `input` (text), `voice` (character), `speed`, and extended parameters `emotion`, `tone`.
+- **FR-005**: System MUST persist provider configurations (Endpoint, AccessKey, SecretKey) securely.
+- **FR-006**: System MUST support hot-reloading of provider configurations (no service restart required).
+- **FR-007**: Admin Console MUST be protected via HTTP Basic Authentication.
+- **FR-008**: Admin Console MUST provide CRUD operations for Provider Configurations.
+- **FR-009**: Demo App MUST be accessible via web browser and connect to the Backend API.
+- **FR-010**: System MUST implement "Smart Default" resolution for voice IDs (e.g. mapping "aliyun" -> "xiaoyun") to enhance user experience.
+- **FR-011**: Show a dynamic wave graph when playing the sound;
+- **FR-012**: Show a log window which is in the bottom part of demo app, show interaction HTTP progress between Demo App and API gateway.
+- **FR-013**: There is a drop box which allow me to select available providers. The provider names are fetched by Gateway service "Provider" debug API, showing only configured and active providers. If failed to fetch provider list, then disable UI element and show error message. When provider is selected, the demo should notify Gateway to use this provider to do TTS.
+- **FR-015**: Admin Console MUST automatically redirect users to the login page if an API request returns a 401 Unauthorized status (indicating invalid or expired token).
+
+### Key Entities
+
+- **ProviderConfig**: Represents a single TTS provider's settings (Type, Name, BaseURL, EncryptedCredentials, ActiveStatus).
+- **VoiceDefinition**: Represents a specific voice/character available for a provider (ID, Name, Gender, SupportedStyles).
+
+### Provider Configuration Requirements
+
+Different providers require different fields in the `ProviderConfig` entity. The system MUST enforce these requirements.
+
+| Provider | Access Key | Secret Key | Base URL | Metadata JSON Fields | Notes |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **ALIYUN** | Required (AccessKeyId) | Required (AccessKeySecret) | Ignored (Uses Cloud API) | `appKey` (Required) | Legacy "Standard" TTS (Sambert). |
+| **ALIYUN_COSYVOICE** | Ignored | Required (DashScope API Key) | Ignored (Uses Cloud API) | N/A | Uses DashScope SDK. |
+| **TENCENT** | Required (SecretId) | Required (SecretKey) | Ignored (Uses Cloud API) | `appId` (Required), `region` (Optional) | `region` defaults to `ap-shanghai`. `appId` is mandatory for specific API calls. |
+| **AWS** | Required (AccessKey) | Required (SecretKey) | Ignored (Uses Cloud API) | `region` (Required) | e.g. `us-east-1`. |
+| **VIBEVOICE** | Optional (Bearer Token) | Ignored | Required (API Endpoint) | N/A | Self-hosted via HTTP. |
+| **QWEN** | Optional (Bearer Token) | Ignored | Required (API Endpoint) | N/A | Self-hosted via HTTP. |
+
+> **Critical**: For Tencent Cloud, `AppId` is a required field in metadata. Current implementation may need update to support this validation.
+
+### Aliyun CosyVoice Implementation Config
+
+Aliyun's *CosyVoice* (Large Audio Model) requires a different SDK interaction pattern than legacy "Standard" TTS (Sambert).
+
+- **SDK Requirement**: Must use `nls-sdk-tts` version `2.2.19` or higher.
+- **Class Usage**: 
+    - **Legacy (ALIYUN)**: `SpeechSynthesizer` (Namespace: `SpeechSynthesizer`).
+    - **CosyVoice (ALIYUN_COSYVOICE)**: `SpeechSynthesizer` of DashScope SDK (Package: `com.alibaba.dashscope.audio.ttsv2`).
+- **Separation Logic**: 
+    - **ALIYUN**: Handles legacy voices (`xiaoyun`, etc.).
+    - **ALIYUN_COSYVOICE**: Handles CosyVoice IDs (starts with `long...`, `loong...`), using DashScope implementation.
+- **Parameters**: 
+    - CosyVoice typically supports 24k sample rate (Standard is often 16k).
+    - CosyVoice supports "Flowing" text (stream input), but for this Gateway (REST API), it accepts full text and streams the audio response.
+
+## Success Criteria
+
+1.  **API Compatibility**: Endpoint `/v1/audio/speech` accepts standard OpenAI-format JSON and returns `audio/mpeg` (or configured format).
+2.  **Provider Coverage**: Successful audio generation verified for all 5 target sources (Aliyun, Tencent, AWS, VibeVoice, Qwen3).
+3.  **Configurability**: Admin can rotate an API key in the console and the next API call succeeds with the new key.
+4.  **Test Coverage**: Core business logic (Gateway routing, Config management) has >80% code coverage.
+5.  **Performance**: API overhead (routing/transformation logic) is < 20ms (excluding downstream provision time).
+
+## Assumptions
+
+- **Self-Hosted Models**: VibeVoice and Qwen3-TTS services are assumed to be running externally; this project implements the *client/connector* to them, not the hosting of the Python models themselves.
+- **OpenAI Compatibility**: Strict JSON payload compatibility is maintained for common fields (`model`, `input`, `voice`), while specific features (emotion) uses metadata or extended fields.
+- **Network**: The backend has outbound internet access to call Cloud APIs.

@@ -1,0 +1,33 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      # Override H2 to use file-based storage in the mounted volume
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/app/data/ttsdb;AUTO_SERVER=TRUE
+      # Enable H2 console access
+      - SPRING_H2_CONSOLE_SETTINGS_WEB_ALLOW_OTHERS=true
+    volumes:
+      # Map host directory to container data directory
+      # This ensures database/config persistence
+      - ${HOME}/dev/tts-gateway:/app/data
+    networks:
+      - tts-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - tts-net
+
+networks:
+  tts-net:
+    driver: bridge

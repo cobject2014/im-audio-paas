@@ -25,6 +25,20 @@ if (storedToken) {
     adminClient.defaults.headers.common['Authorization'] = `Basic ${storedToken}`;
 }
 
+// Interceptor to handle 401 Unauthorized globally
+adminClient.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            // Clear invalid token
+            localStorage.removeItem('adminAuth');
+            // Redirect to login
+            window.location.href = '/login';
+        }
+        return Promise.reject(error);
+    }
+);
+
 export const setAuthToken = (token: string) => {
     // For Basic Auth, token is base64(user:pass)
     if (token) {

@@ -113,7 +113,8 @@ End users (or developers testing the system) can use a web interface to type tex
 - **FR-011**: Show a dynamic wave graph when playing the sound;
 - **FR-012**: Show a log window which is in the bottom part of demo app, show interaction HTTP progress between Demo App and API gateway.
 - **FR-013**: There is a drop box which allow me to select available providers. The provider names are fetched by Gateway service "Provider" debug API, showing only configured and active providers. If failed to fetch provider list, then disable UI element and show error message. When provider is selected, the demo should notify Gateway to use this provider to do TTS.
-- 
+- **FR-015**: Admin Console MUST automatically redirect users to the login page if an API request returns a 401 Unauthorized status (indicating invalid or expired token).
+
 ### Key Entities
 
 - **ProviderConfig**: Represents a single TTS provider's settings (Type, Name, BaseURL, EncryptedCredentials, ActiveStatus).

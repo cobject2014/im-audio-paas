@@ -94,6 +94,12 @@ public class ProviderRoutingService {
     private ProviderType inferProvider(String voiceId) {
         if (voiceId == null) throw new IllegalArgumentException("Voice ID cannot be null");
         String lower = voiceId.toLowerCase();
+        
+        // CosyVoice Heuristics
+        if (lower.startsWith("long") || lower.startsWith("loong") || lower.endsWith("_v2") || lower.startsWith("libai")) {
+            return ProviderType.ALIYUN_COSYVOICE;
+        }
+
         if (lower.startsWith("aliyun") || lower.contains("xiaoyun")) return ProviderType.ALIYUN;
         if (lower.startsWith("aws") || lower.equals("joanna")) return ProviderType.AWS; // Joanna is AWS
         if (lower.startsWith("tencent")) return ProviderType.TENCENT;

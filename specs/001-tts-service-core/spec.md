@@ -87,6 +87,7 @@ End users (or developers testing the system) can use a web interface to type tex
 
 1. **Given** the demo app loaded, **When** user selects "AWS" and types text, **Then** the "Play" button becomes active upon success.
 2. **Given** a backend error, **When** generating speech, **Then** the UI displays a readable error message.
+3. **Given** the user changes the "Provider" selection, **Then** the "Voice ID" field is automatically updated to a valid default for that provider, and the "Voice ID" suggestion list is updated to show voices relevant to the selected provider.
 
 ### Edge Cases
 
@@ -100,7 +101,7 @@ End users (or developers testing the system) can use a web interface to type tex
 ### Functional Requirements
 
 - **FR-001**: System MUST expose a RESTful API compliant with OpenAI's `/v1/audio/speech` definition (POST), extended for multi-provider support.
-- **FR-002**: System MUST support the following providers: Aliyun (CosyVoice/Sambert), Tencent Cloud, AWS Polly.
+- **FR-002**: System MUST support the following providers: Aliyun (Standard), Aliyun-CosyVoice (Large Model), Tencent Cloud, AWS Polly.
 - **FR-003**: System MUST support integration with self-hosted VibeVoice and Qwen3-TTS instances (via HTTP connector).
 - **FR-004**: API MUST accept parameters for `model` (provider/voice), `input` (text), `voice` (character), `speed`, and extended parameters `emotion`, `tone`.
 - **FR-005**: System MUST persist provider configurations (Endpoint, AccessKey, SecretKey) securely.
@@ -124,13 +125,29 @@ Different providers require different fields in the `ProviderConfig` entity. The
 
 | Provider | Access Key | Secret Key | Base URL | Metadata JSON Fields | Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **ALIYUN** | Required (AccessKeyId) | Required (AccessKeySecret) | Ignored (Uses Cloud API) | `appKey` (Required) | `appKey` is the Project AppKey from NLS console. |
+| **ALIYUN** | Required (AccessKeyId) | Required (AccessKeySecret) | Ignored (Uses Cloud API) | `appKey` (Required) | Legacy "Standard" TTS (Sambert). |
+| **ALIYUN_COSYVOICE** | Ignored | Required (DashScope API Key) | Ignored (Uses Cloud API) | N/A | Uses DashScope SDK. |
 | **TENCENT** | Required (SecretId) | Required (SecretKey) | Ignored (Uses Cloud API) | `appId` (Required), `region` (Optional) | `region` defaults to `ap-shanghai`. `appId` is mandatory for specific API calls. |
 | **AWS** | Required (AccessKey) | Required (SecretKey) | Ignored (Uses Cloud API) | `region` (Required) | e.g. `us-east-1`. |
 | **VIBEVOICE** | Optional (Bearer Token) | Ignored | Required (API Endpoint) | N/A | Self-hosted via HTTP. |
 | **QWEN** | Optional (Bearer Token) | Ignored | Required (API Endpoint) | N/A | Self-hosted via HTTP. |
 
 > **Critical**: For Tencent Cloud, `AppId` is a required field in metadata. Current implementation may need update to support this validation.
+
+### Aliyun CosyVoice Implementation Config
+
+Aliyun's *CosyVoice* (Large Audio Model) requires a different SDK interaction pattern than legacy "Standard" TTS (Sambert).
+
+- **SDK Requirement**: Must use `nls-sdk-tts` version `2.2.19` or higher.
+- **Class Usage**: 
+    - **Legacy (ALIYUN)**: `SpeechSynthesizer` (Namespace: `SpeechSynthesizer`).
+    - **CosyVoice (ALIYUN_COSYVOICE)**: `SpeechSynthesizer` of DashScope SDK (Package: `com.alibaba.dashscope.audio.ttsv2`).
+- **Separation Logic**: 
+    - **ALIYUN**: Handles legacy voices (`xiaoyun`, etc.).
+    - **ALIYUN_COSYVOICE**: Handles CosyVoice IDs (starts with `long...`, `loong...`), using DashScope implementation.
+- **Parameters**: 
+    - CosyVoice typically supports 24k sample rate (Standard is often 16k).
+    - CosyVoice supports "Flowing" text (stream input), but for this Gateway (REST API), it accepts full text and streams the audio response.
 
 ## Success Criteria
 

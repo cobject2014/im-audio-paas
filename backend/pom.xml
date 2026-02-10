@@ -52,9 +52,20 @@
         <!-- Cloud SDKs -->
         <!-- Aliyun -->
         <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>dashscope-sdk-java</artifactId>
+            <version>2.16.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
             <groupId>com.alibaba.nls</groupId>
             <artifactId>nls-sdk-tts</artifactId>
-            <version>2.2.1</version>
+            <version>2.2.19</version>
             <exclusions>
                 <exclusion>
                     <groupId>com.squareup.okio</groupId>

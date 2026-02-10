@@ -29,6 +29,8 @@ class RoutingLogicTest {
     private VoiceDefinitionRepository voiceRepo;
     @Mock
     private TtsProvider aliyunProvider;
+    @Mock
+    private TtsProvider cosyVoiceProvider;
 
     private ProviderRoutingService service;
 
@@ -36,9 +38,10 @@ class RoutingLogicTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         when(aliyunProvider.getType()).thenReturn(ProviderType.ALIYUN);
+        when(cosyVoiceProvider.getType()).thenReturn(ProviderType.ALIYUN_COSYVOICE);
         
         service = new ProviderRoutingService(
-                Collections.singletonList(aliyunProvider),
+                java.util.Arrays.asList(aliyunProvider, cosyVoiceProvider),
                 configRepo,
                 voiceRepo
         );
@@ -88,5 +91,32 @@ class RoutingLogicTest {
         verify(aliyunProvider).synthesize(captor.capture(), any());
 
         assertEquals("xiaoyun", captor.getValue().getVoiceId(), "Should map 'ALIYUN' to 'xiaoyun'");
+    }
+
+    @Test
+    void testCosyVoiceRouting() {
+        // Setup config for CosyVoice
+        ProviderConfig config = new ProviderConfig();
+        when(configRepo.findFirstByProviderTypeAndIsActiveTrue(ProviderType.ALIYUN_COSYVOICE))
+                .thenReturn(Optional.of(config));
+
+        when(cosyVoiceProvider.synthesize(any(), any())).thenReturn(TtsResponse.builder().build());
+
+        // Test Request with a CosyVoice ID
+        TtsRequest request = TtsRequest.builder()
+                .voiceId("longxiaochun")
+                .text("hello")
+                .build();
+
+        service.routeAndSynthesize(request);
+
+        // Verify it went to the CosyVoice provider
+        ArgumentCaptor<TtsRequest> captor = ArgumentCaptor.forClass(TtsRequest.class);
+        verify(cosyVoiceProvider).synthesize(captor.capture(), any());
+        
+        // Ensure standard provider was NOT called
+        verify(aliyunProvider, never()).synthesize(any(), any());
+
+        assertEquals("longxiaochun", captor.getValue().getVoiceId(), "Voice ID should remain unchanged");
     }
 }

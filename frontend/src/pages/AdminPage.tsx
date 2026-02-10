@@ -123,6 +123,7 @@ const AdminPage = () => {
     const getLabels = (type?: string) => {
         switch(type) {
             case 'ALIYUN': return { ak: 'Access Key ID', sk: 'Access Key Secret' };
+            case 'ALIYUN_COSYVOICE': return { ak: 'Unused', sk: 'DashScope API Key' };
             case 'TENCENT': return { ak: 'Secret ID', sk: 'Secret Key' };
             case 'VIBEVOICE': 
             case 'QWEN': return { ak: 'API Token', sk: 'Unused' };
@@ -131,7 +132,7 @@ const AdminPage = () => {
     }
 
     const labels = getLabels(currentProvider.providerType);
-    const isCloud = ["ALIYUN", "AWS", "TENCENT"].includes(currentProvider.providerType || 'ALIYUN');
+    const isCloud = ["ALIYUN", "ALIYUN_COSYVOICE", "AWS", "TENCENT"].includes(currentProvider.providerType || 'ALIYUN');
     const isLocal = ["VIBEVOICE", "QWEN"].includes(currentProvider.providerType || '');
 
     return (
@@ -203,7 +204,8 @@ const AdminPage = () => {
                                     setCurrentProvider({ ...currentProvider, providerType: e.target.value as any })
                                 }}
                             >
-                                <MenuItem value="ALIYUN">Aliyun</MenuItem>
+                                <MenuItem value="ALIYUN">Aliyun (Standard)</MenuItem>
+                                <MenuItem value="ALIYUN_COSYVOICE">Aliyun CosyVoice (Large Model)</MenuItem>
                                 <MenuItem value="AWS">AWS</MenuItem>
                                 <MenuItem value="TENCENT">Tencent</MenuItem>
                                 <MenuItem value="VIBEVOICE">VibeVoice</MenuItem>
@@ -211,12 +213,14 @@ const AdminPage = () => {
                             </Select>
                         </FormControl>
                         
-                        <TextField
-                            label={labels.ak}
-                            fullWidth
-                            value={currentProvider.accessKey || ''}
-                            onChange={(e) => setCurrentProvider({ ...currentProvider, accessKey: e.target.value })}
-                        />
+                        {labels.ak !== 'Unused' && (
+                            <TextField
+                                label={labels.ak}
+                                fullWidth
+                                value={currentProvider.accessKey || ''}
+                                onChange={(e) => setCurrentProvider({ ...currentProvider, accessKey: e.target.value })}
+                            />
+                        )}
                         
                         {isCloud && (
                             <TextField

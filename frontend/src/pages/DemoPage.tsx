@@ -12,11 +12,20 @@ import {
     FormControl,
     InputLabel,
     Select,
-    MenuItem
+    MenuItem,
+    Autocomplete
 } from '@mui/material';
 import { generateSpeech, getDebugProviders } from '../api/ttsClient';
 import WaveformPlayer from '../components/WaveformPlayer'; 
 import LogWindow, { LogEntry } from '../components/LogWindow'; 
+
+// Updated Presets for split providers
+const VOICE_PRESETS: Record<string, string[]> = {
+    'ALIYUN': ['aliyun', 'xiaoyun', 'xiaogang', 'ruoxi', 'siqi'],
+    'ALIYUN_COSYVOICE': ['longxiaochun', 'longwan', 'longcheng', 'longhua', 'longshu', 'longxiaoxia', 'zhimiao_emo', 'zhiyan_emo'],
+    'TENCENT': ['101001', '101002', '102001', '102002'],
+    'AWS': ['Joanna', 'Matthew', 'Ivy', 'Kendra']
+};
 
 const DemoPage = () => {
     const [text, setText] = useState('Hello, this is a test of the TTS Gateway system.');
@@ -32,6 +41,17 @@ const DemoPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
     const [logs, setLogs] = useState<LogEntry[]>([]); 
+
+    // Auto-update Voice ID when provider changes
+    useEffect(() => {
+        const presets = VOICE_PRESETS[provider];
+        if (presets && presets.length > 0) {
+            // Check if current voiceId is valid for new provider
+            if (!presets.includes(voiceId)) {
+                setVoiceId(presets[0]);
+            }
+        }
+    }, [provider]);
 
     // Fetch providers on mount
     useEffect(() => {
@@ -159,12 +179,24 @@ const DemoPage = () => {
                     </Grid>
 
                     <Grid item xs={12} sm={6}>
-                        <TextField
-                            label="Voice ID"
-                            fullWidth
+                        <Autocomplete
+                            freeSolo
+                            options={VOICE_PRESETS[provider] || []}
                             value={voiceId}
-                            helperText="e.g., aliyun, xiaoyun, Joanna, qwen-voice-1"
-                            onChange={(e) => setVoiceId(e.target.value)}
+                            onChange={(event, newValue) => {
+                                setVoiceId(newValue || '');
+                            }}
+                            onInputChange={(event, newInputValue) => {
+                                setVoiceId(newInputValue);
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Voice ID"
+                                    helperText="Select preset or type custom ID (e.g. longxiaochun for CosyVoice)"
+                                    fullWidth
+                                />
+                            )}
                         />
                     </Grid>
 

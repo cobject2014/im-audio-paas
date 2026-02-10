@@ -3,6 +3,7 @@ package com.imaudiopaas.tts.config;
 import com.imaudiopaas.tts.config.security.ApiTokenFilter;
 import java.util.Arrays;
 import java.util.List;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -15,6 +16,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -29,6 +31,8 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
+                // Allow H2 Consonew AntPathRequestMatcher("/h2-console/**"All()
+                .requestMatchers(PathRequest.toH2Console()).permitAll()
                 .requestMatchers("/v1/debug/**").permitAll()
                 .requestMatchers("/v1/audio/speech").permitAll()
                 .requestMatchers("/v1/**").authenticated()
@@ -36,6 +40,7 @@ public class SecurityConfig {
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
             )
+            .headers(headers -> headers.frameOptions(frame -> frame.disable()))
             .httpBasic(Customizer.withDefaults())
             .addFilterBefore(apiTokenFilter, UsernamePasswordAuthenticationFilter.class);
             

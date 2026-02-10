@@ -7,7 +7,7 @@ services:
       - "8080:8080"
     environment:
       # Override H2 to use file-based storage in the mounted volume
-      - SPRING_DATASOURCE_URL=jdbc:h2:file:/app/data/ttsdb;DB_CLOSE_ON_EXIT=FALSE
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/app/data/ttsdb;AUTO_SERVER=TRUE
       # Enable H2 console access
       - SPRING_H2_CONSOLE_SETTINGS_WEB_ALLOW_OTHERS=true
     volumes:

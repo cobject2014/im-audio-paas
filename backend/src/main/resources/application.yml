@@ -5,7 +5,7 @@ spring:
     virtual:
       enabled: true
   datasource:
-    url: jdbc:h2:mem:ttsdb
+    url: jdbc:h2:file:/app/tts_db_file;AUTO_SERVER=TRUE
     driverClassName: org.h2.Driver
     username: sa
     password: password
@@ -16,6 +16,8 @@ spring:
   h2:
     console:
       enabled: true
+      settings:
+        web-allow-others: true
 
 server:
   port: 8080

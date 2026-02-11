@@ -17,6 +17,7 @@ import org.mockito.MockitoAnnotations;
 import java.util.Collections;
 import java.util.Optional;
 
+import org.springframework.context.ApplicationEventPublisher;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -27,6 +28,8 @@ class RoutingLogicTest {
     private ProviderConfigRepository configRepo;
     @Mock
     private VoiceDefinitionRepository voiceRepo;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
     @Mock
     private TtsProvider aliyunProvider;
     @Mock
@@ -43,7 +46,8 @@ class RoutingLogicTest {
         service = new ProviderRoutingService(
                 java.util.Arrays.asList(aliyunProvider, cosyVoiceProvider),
                 configRepo,
-                voiceRepo
+                voiceRepo,
+                eventPublisher
         );
     }
 

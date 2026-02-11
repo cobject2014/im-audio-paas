@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, Link as RouterLink } from 'reac
 import { Container, AppBar, Toolbar, Typography, Box, Button } from '@mui/material'
 import LoginPage from './pages/LoginPage'
 import AdminPage from './pages/AdminPage'
+import StatisticsPage from './pages/StatisticsPage'
 import DemoPage from './pages/DemoPage'
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
@@ -19,6 +20,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               TTS Gateway Console
             </Typography>
             <Button color="inherit" component={RouterLink} to="/admin">Config</Button>
+            <Button color="inherit" component={RouterLink} to="/admin/statistics">Statistics</Button>
             <Button color="inherit" component={RouterLink} to="/demo">Demo</Button>
             <Button color="inherit" onClick={handleLogout} sx={{ ml: 2 }}>Logout</Button>
           </Toolbar>
@@ -36,6 +38,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/admin/statistics" element={<Layout><StatisticsPage /></Layout>} />
         <Route path="/admin" element={<Layout><AdminPage /></Layout>} />
         <Route path="/demo" element={<Layout><DemoPage /></Layout>} />
         <Route path="/" element={<Navigate to="/admin" replace />} />

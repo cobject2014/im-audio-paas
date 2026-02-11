@@ -71,3 +71,17 @@ export const updateProvider = async (id: string, provider: Partial<ProviderConfi
 export const deleteProvider = async (id: string) => {
     await adminClient.delete(`/providers/${id}`);
 };
+
+export interface StatisticsDto {
+    providerName: string;
+    totalRequests: number;
+    successCount: number;
+    failureCount: number;
+    successRate: number;
+    avgLatencyMs: number;
+}
+
+export const getStatistics = async () => {
+    const response = await adminClient.get<StatisticsDto[]>('/statistics');
+    return response.data;
+};

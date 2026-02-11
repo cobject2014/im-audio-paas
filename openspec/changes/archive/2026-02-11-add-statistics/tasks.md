@@ -22,3 +22,9 @@
 - [x] 4.1 Update `src/api/adminClient.ts` to include the `getStatistics` method.
 - [x] 4.2 Create `src/pages/StatisticsPage.tsx` with a table displaying provider stats.
 - [x] 4.3 Add the "Statistics" link to the navigation menu and register the route in `App.tsx`.
+- [x] 4.4 Implement sorting for the statistics table in `StatisticsPage.tsx`.
+- [x] 4.5 Set default sorting to "Total Requests" (Descending).
+
+
+
+

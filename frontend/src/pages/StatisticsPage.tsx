@@ -1,16 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { 
     Box, Button, Container, Paper, Table, TableBody, TableCell, 
-    TableContainer, TableHead, TableRow, Typography, Alert, CircularProgress 
+    TableContainer, TableHead, TableRow, Typography, Alert, CircularProgress,
+    TableSortLabel
 } from '@mui/material';
 import { getStatistics, StatisticsDto } from '../api/adminClient';
+
+type Order = 'asc' | 'desc';
 
 const StatisticsPage: React.FC = () => {
     const [stats, setStats] = useState<StatisticsDto[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [order, setOrder] = useState<Order>('desc');
+    const [orderBy, setOrderBy] = useState<keyof StatisticsDto>('totalRequests');
 
     useEffect(() => {
+
         loadStatistics();
     }, []);
 
@@ -26,6 +32,36 @@ const StatisticsPage: React.FC = () => {
             setLoading(false);
         }
     };
+
+    const handleRequestSort = (property: keyof StatisticsDto) => {
+        const isAsc = orderBy === property && order === 'asc';
+        setOrder(isAsc ? 'desc' : 'asc');
+        setOrderBy(property);
+    };
+
+    const sortedStats = useMemo(() => {
+        return [...stats].sort((a, b) => {
+            const aValue = a[orderBy];
+            const bValue = b[orderBy];
+
+            if (bValue < aValue) {
+                return order === 'asc' ? 1 : -1;
+            }
+            if (bValue > aValue) {
+                return order === 'asc' ? -1 : 1;
+            }
+            return 0;
+        });
+    }, [stats, order, orderBy]);
+
+    const headCells: { id: keyof StatisticsDto; label: string; numeric: boolean }[] = [
+        { id: 'providerName', label: 'Provider Name', numeric: false },
+        { id: 'totalRequests', label: 'Total Requests', numeric: true },
+        { id: 'successCount', label: 'Success Count', numeric: true },
+        { id: 'failureCount', label: 'Failure Count', numeric: true },
+        { id: 'successRate', label: 'Success Rate', numeric: true },
+        { id: 'avgLatencyMs', label: 'Avg Latency (ms)', numeric: true },
+    ];
 
     return (
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -49,16 +85,25 @@ const StatisticsPage: React.FC = () => {
                     <Table>
                         <TableHead>
                             <TableRow>
-                                <TableCell>Provider Name</TableCell>
-                                <TableCell align="right">Total Requests</TableCell>
-                                <TableCell align="right">Success Count</TableCell>
-                                <TableCell align="right">Failure Count</TableCell>
-                                <TableCell align="right">Success Rate</TableCell>
-                                <TableCell align="right">Avg Latency (ms)</TableCell>
+                                {headCells.map((headCell) => (
+                                    <TableCell
+                                        key={headCell.id}
+                                        align={headCell.numeric ? 'right' : 'left'}
+                                        sortDirection={orderBy === headCell.id ? order : false}
+                                    >
+                                        <TableSortLabel
+                                            active={orderBy === headCell.id}
+                                            direction={orderBy === headCell.id ? order : 'asc'}
+                                            onClick={() => handleRequestSort(headCell.id)}
+                                        >
+                                            {headCell.label}
+                                        </TableSortLabel>
+                                    </TableCell>
+                                ))}
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {stats.map((stat) => (
+                            {sortedStats.map((stat) => (
                                 <TableRow key={stat.providerName}>
                                     <TableCell component="th" scope="row">
                                         {stat.providerName}
@@ -88,5 +133,6 @@ const StatisticsPage: React.FC = () => {
         </Container>
     );
 };
+
 
 export default StatisticsPage;

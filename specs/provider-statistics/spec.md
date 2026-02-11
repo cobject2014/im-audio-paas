@@ -24,3 +24,7 @@ The Admin Portal SHALL include a dedicated page for visualizing provider perform
 #### Scenario: View Stats Page
 - **WHEN** an Admin user navigates to the "Statistics" page
 - **THEN** they see a table or chart displaying request counts and success rates for all configured providers
+
+### Requirement: Sortable Statistics
+The statistics table in the Admin Portal SHALL be sortable by column headers (Provider Name, Total Requests, Success Rate, etc.) to allow admins to easily identify top-performing or problematic providers.
+

@@ -8,6 +8,7 @@ The system currently lacks visibility into the performance and reliability of ex
 -  **Data Model**: Store request logs with provider ID, status, and failure reason in the database (H2/MySQL).
 -  **API**: New Admin API endpoints to query aggregated statistics (e.g., success rate per provider).
 -  **Frontend**: New "Statistics" page in the Admin Portal to visualize request counts and outcomes.
+-  **Sorting**: The table should support column sorting. The *default* sorting must be by "Total Requests" in descending order (highest volume first).
 
 ## Capabilities
 

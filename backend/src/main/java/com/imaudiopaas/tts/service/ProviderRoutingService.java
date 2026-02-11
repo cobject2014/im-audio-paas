@@ -2,6 +2,7 @@ package com.imaudiopaas.tts.service;
 
 import com.imaudiopaas.tts.core.TtsProvider;
 import com.imaudiopaas.tts.core.domain.ProviderType;
+import com.imaudiopaas.tts.core.event.ProviderRequestEvent;
 import com.imaudiopaas.tts.core.domain.TtsRequest;
 import com.imaudiopaas.tts.core.domain.TtsResponse;
 import com.imaudiopaas.tts.exception.TtsException;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -23,13 +25,16 @@ public class ProviderRoutingService {
     private final Map<ProviderType, TtsProvider> providers = new EnumMap<>(ProviderType.class);
     private final ProviderConfigRepository providerConfigRepository;
     private final VoiceDefinitionRepository voiceDefinitionRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ProviderRoutingService(
             List<TtsProvider> providersList,
             ProviderConfigRepository providerConfigRepository,
-            VoiceDefinitionRepository voiceDefinitionRepository) {
+            VoiceDefinitionRepository voiceDefinitionRepository,
+            ApplicationEventPublisher eventPublisher) {
         this.providerConfigRepository = providerConfigRepository;
         this.voiceDefinitionRepository = voiceDefinitionRepository;
+        this.eventPublisher = eventPublisher;
         providersList.forEach(p -> providers.put(p.getType(), p));
     }
 
@@ -88,7 +93,26 @@ public class ProviderRoutingService {
         // If deep copy needed, we should build a new one. But TtsRequest is @Data.
         request.setVoiceId(nativeVoiceId);
         
-        return provider.synthesize(request, config);
+        long startTime = System.currentTimeMillis();
+        boolean success = false;
+        String errorMessage = null;
+        try {
+            TtsResponse response = provider.synthesize(request, config);
+            success = true;
+            return response;
+        } catch (Exception e) {
+            errorMessage = e.getMessage();
+            throw e;
+        } finally {
+            long duration = System.currentTimeMillis() - startTime;
+            eventPublisher.publishEvent(new ProviderRequestEvent(
+                    this,
+                    config.getName(),
+                    success,
+                    duration,
+                    errorMessage
+            ));
+        }
     }
     
     private ProviderType inferProvider(String voiceId) {
